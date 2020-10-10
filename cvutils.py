@@ -79,7 +79,7 @@ def _show_multiple(imgs, shape, figsize, max_img, cmap, titles, figsize_factor, 
             _show_on_one_plot(imgs, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle)
         plt.show()
 
-def show_from(path, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle):
+def _show_from(path, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle):
     if(os.path.isdir(path)):
         imgs = imread(path, max_img=max_img)
         _show_multiple(imgs, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle)
@@ -143,7 +143,7 @@ def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None,
     if arg is None:
         raise ValueError("The argument was None!")
     if(type(arg) == str):
-        show_from(arg, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle)
+        _show_from(arg, shape, figsize, max_img, cmap, titles, figsize_factor, suptitle)
     else:
         if(type(arg) == list):
             arg = np.array(arg)
