@@ -177,9 +177,9 @@ def _read_one(path, shape):
 
 def imread(path, max_img=None, shape=None):
     if(os.path.isdir(path)):
-        _read_batch(path, shape)
+        return _read_batch(path, shape)
     else:
-        _read_one(path, shape)
+        return _read_one(path, shape)
 
 def open_and_show(path):
     img = open(path)
