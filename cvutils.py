@@ -87,19 +87,6 @@ def _show_from(path, shape, figsize, max_img, cmap, titles, figsize_factor, supt
         img = np.array(Image.open(path))
         imshow(img, figsize=figsize, max_img=max_img, cmap=cmap, titles=titles, figsize_factor=figsize_factor, suptitle=suptitle)   
 
-# def read_images_sort(path):
-#     images = []
-#     filenames = os.listdir(path)
-#     #sorting as integers
-#     filenames = [int(x[:-4]) for x in filenames]
-#     filenames.sort()
-#     #TODO: expand to any format
-#     filenames = [str(x)+'.bmp' for x in filenames]
-#     for name in filenames:
-#         image = Image.open(path + name)
-#         images.append(np.array(image))
-#     return np.array(images)
-
 def _factorize(num):
     factors = []
     for i in range(1, num + 1):
@@ -112,7 +99,8 @@ def _calculate_shape(imgs):
     height = imgs.shape[1]
     width = imgs.shape[2]
 
-    #euristic
+    #euristic for three images to not show them as column
+    #when it isn't necessary
     if(size == 3):
         if(height > width):
             return(1, 3)
@@ -140,6 +128,9 @@ def _calculate_figsize(imgs, shape, factor):
     return (factor, factor * ratio)
 
 def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None, cmap=None, titles=None, suptitle=None):
+    '''
+    Displays an image or a sequence of images.
+    '''
     if arg is None:
         raise ValueError("The argument was None!")
     if(type(arg) == str):
@@ -160,8 +151,7 @@ def add_noise_gaussian(img, mean=0, std=1, grayscale=False):
         noisy_img = img + np.random.normal(mean, std, img.shape)
     return np.clip(noisy_img, 0, 255).astype(np.uint8)
 
-def imread(path, max_img=None):
-    if(os.path.isdir(path)):
+def _read_batch(path, max_img=None, shape=None):
         images = []
         filenames = os.listdir(path)
         if(max_img is None):
@@ -173,9 +163,23 @@ def imread(path, max_img=None):
                 pass
             else:
                 images.append(np.array(image))
-        return np.array(images)
-    else:
+        
+        if(shape is None):
+            return np.array(images)
+        else:
+            return _resize_batch(np.array(images), shape)
+
+def _read_one(path, shape):
+    if(shape is None):
         return np.array(Image.open(path))
+    else:
+        return _resize_one(np.array(Image.open(path)), shape)
+
+def imread(path, max_img=None, shape=None):
+    if(os.path.isdir(path)):
+        _read_batch(path, shape)
+    else:
+        _read_one(path, shape)
 
 def open_and_show(path):
     img = open(path)
