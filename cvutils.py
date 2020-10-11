@@ -258,3 +258,13 @@ def resize(imgs, shape):
         return _resize_batch(imgs, shape)
     else:
         return _resize_one(imgs, shape)
+
+def historyplot(history, figsize=(10,10)):
+    plt.figure(figsize=figsize)
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'val'], loc = 'upper left')
+    plt.show()
