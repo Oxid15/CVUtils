@@ -1,4 +1,17 @@
-from cvutils_import import *
+import os
+import time
+import random
+
+import numpy as np
+import cv2
+import pandas as pd
+from matplotlib import pyplot as plt
+from PIL import Image
+from PIL import ImageOps
+
+from skimage.measure import compare_ssim as ssim
+from skimage.measure import compare_psnr as psnr
+
 
 def _is_multiple(img):
     shape = img.shape
@@ -6,7 +19,7 @@ def _is_multiple(img):
         if(len(img[0].shape) > 1): # if contains images and not scalars
             return True
         else:
-            raise ValueError('Array of scalars was passed with shape={shape} instead of array of images')
+            raise ValueError(f'Array of scalars was passed with shape={shape} instead of array of images')
     else:
         if(len(shape) == 2): # it is single-channel image (h, w)
             return False
@@ -17,6 +30,7 @@ def _is_multiple(img):
                 return True
         elif(len(shape) == 4): # it is an array of 3-channel images (n, h, w, 3)
             return True
+
 
 def _show_one(img, figsize, cmap_name, title, suptitle):
     if(figsize == 'auto'):
@@ -29,21 +43,25 @@ def _show_one(img, figsize, cmap_name, title, suptitle):
     ax.imshow(img, cmap=plt.cm.get_cmap(cmap_name))
     plt.show()
 
+
 def _show_consequent(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
     k = 0
     if(shape is None):
         for img in imgs:
             if(k < max_img):
                 _, ax = plt.subplots(figsize=figsize)
+                plt.suptitle(suptitle)
                 ax.imshow(img, cmap=plt.cm.get_cmap(cmap_name))
                 if(titles is not None):
                     ax.set_title(titles[k])
                 plt.show()
                 k += 1
 
+
 def _show_on_one_plot(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
     k = 0
     _, ax = plt.subplots(shape[0], shape[1], figsize=figsize)
+    plt.suptitle(suptitle)
     if(shape[0] != 1 and shape[1] != 1):
         for i in range(shape[0]):
             for j in range(shape[1]):
@@ -61,23 +79,23 @@ def _show_on_one_plot(imgs, shape, figsize, max_img, cmap_name, titles, figsize_
             if(k < max_img):
                 ax[i].imshow(imgs[k], cmap=plt.cm.get_cmap(cmap_name))
                 if(titles is not None):
-                        ax[i].set_title(titles[k])
+                    ax[i].set_title(titles[k])
                 k += 1
 
+
 def _show_multiple(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
-    plt.suptitle(suptitle)
-    
     if(max_img is None):
         max_img = len(imgs)
     if(shape == 'auto'):
         shape = _calculate_shape(imgs)
     if(figsize == 'auto'):
         figsize = _calculate_figsize(imgs, shape, figsize_factor)
-        if(shape is None):
-            _show_consequent(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
-        else:
-            _show_on_one_plot(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
-        plt.show()
+    if(shape is None):
+        _show_consequent(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
+    else:
+        _show_on_one_plot(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
+    plt.show()
+
 
 def _show_from(path, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
     if(os.path.isdir(path)):
@@ -87,6 +105,7 @@ def _show_from(path, shape, figsize, max_img, cmap_name, titles, figsize_factor,
         img = np.array(Image.open(path))
         imshow(img, figsize=figsize, max_img=max_img, cmap_name=cmap_name, titles=titles, figsize_factor=figsize_factor, suptitle=suptitle)   
 
+
 def _factorize(num):
     factors = []
     for i in range(1, num + 1):
@@ -94,13 +113,14 @@ def _factorize(num):
             factors.append(i)
     return np.array(factors)
 
+
 def _calculate_shape(imgs):
     size = imgs.shape[0]
     height = imgs.shape[1]
     width = imgs.shape[2]
 
-    #euristic for three images to not show them as column
-    #when it isn't necessary
+    # euristic for three images to not show them as column
+    # when it isn't necessary
     if(size == 3):
         if(height > width):
             return(1, 3)
@@ -119,6 +139,7 @@ def _calculate_shape(imgs):
     else:
         return (factors_r[arg], factors[arg])
 
+
 def _calculate_figsize(imgs, shape, factor):
     sum_height = shape[0] * imgs.shape[1]
     sum_width = shape[1] * imgs.shape[2]
@@ -127,7 +148,9 @@ def _calculate_figsize(imgs, shape, factor):
     ratio = sum_height / sum_width
     return (factor, factor * ratio)
 
-def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None, cmap_name=None, titles=None, suptitle=None):
+
+def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None, cmap_name=None,
+    titles=None, suptitle=None, norm=True):
     '''
     Displays an image or a sequence of images.
       
@@ -153,6 +176,8 @@ def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None,
       
     suptitle: (str) the title for the whole plot  
       
+    norm: (bool) whether to normalize the images by dividing by their np.max  
+      
     Returns: None
     '''
     if arg is None:
@@ -162,10 +187,15 @@ def imshow(arg, shape='auto', figsize='auto', figsize_factor=None, max_img=None,
     else:
         if(type(arg) == list):
             arg = np.array(arg)
-        if(_is_multiple(arg)):
-           _show_multiple(arg, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
+        if _is_multiple(arg):
+            if norm:
+                for i in range(len(arg)):
+                    arg[i] = to_255(arg[i])
+            _show_multiple(arg, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
         else:
-           _show_one(arg, figsize, cmap_name, titles, suptitle)
+            arg = to_255(arg)
+            _show_one(arg, figsize, cmap_name, titles, suptitle)
+
 
 def add_noise_gaussian(img, grayscale, mean=0, std=1):
     '''
@@ -190,15 +220,17 @@ def add_noise_gaussian(img, grayscale, mean=0, std=1):
         noisy_img = img + np.random.normal(mean, std, img.shape)
     return np.clip(noisy_img, 0, 255).astype(np.uint8)
 
+
 def _read_batch(path, max_img=None, shape=None):
         images = []
         filenames = os.listdir(path)
+        filenames.sort()
         if(max_img is None):
             max_img = len(filenames)
         for i in range(max_img):
             try:
                 image = Image.open(os.path.join(path, filenames[i]))
-            except Exception:
+            except:
                 pass
             else:
                 images.append(np.array(image))
@@ -208,11 +240,13 @@ def _read_batch(path, max_img=None, shape=None):
         else:
             return _resize_batch(np.array(images), shape)
 
+
 def _read_one(path, shape):
     if(shape is None):
         return np.array(Image.open(path))
     else:
         return _resize_one(np.array(Image.open(path)), shape)
+
 
 def imread(path, max_img=None, shape=None):
     '''
@@ -224,14 +258,15 @@ def imread(path, max_img=None, shape=None):
       
     max_img: (int) maximum number of images  
       
-    shape: (tuple) the desired shape for images to be resized; does not resize anything by default, when is set calls cv2.resize with shape
+    shape: (tuple) the desired shape for images to be resized; does not resize anything by default, when is set calls PIL.Image.resize() with shape
       
     Returns: (np.ndarray) image or list of images
     '''
     if(os.path.isdir(path)):
-        return _read_batch(path, shape)
+        return _read_batch(path, max_img, shape)
     else:
         return _read_one(path, shape)
+
 
 def open_and_show(path):
     '''
@@ -247,6 +282,7 @@ def open_and_show(path):
     _show_one(img, (10,10), 'viridis', None, 'input')
     return img
 
+
 def normalize(img):
     '''
     Normalizes the image by subtracting the mean and dividing by the standard deviation.  
@@ -259,9 +295,10 @@ def normalize(img):
     '''
     return (img - np.mean(img)) / np.std(img)
 
+
 def to_255(img):
     '''
-    Normalizes image to [0, 255] by dividing by the maximum value and multiplying by 255. Ignores nans by np.nanmax(). Casts the dtype to uint8.
+    Normalizes image to [0, 255] by adding minimum and dividing by the maximum value and multiplying by 255. Ignores nans by np.nanmax(). Casts the dtype to uint8.
       
     Parameters:  
       
@@ -269,10 +306,12 @@ def to_255(img):
       
     Returns:  (np.ndarray) normalized image of dtype uint8
     '''
+    img = img + np.abs(np.min(img))
     _max = np.nanmax(img)
     return ((img / _max) * 255).astype(np.uint8)
 
-def to_1(image):
+
+def to_1(img):
     '''
     Normalizes image to [0, 1] by dividing by the maximum value. Ignores nans by np.nanmax().
       
@@ -282,7 +321,9 @@ def to_1(image):
       
     Returns:  (np.ndarray) normalized image
     '''
-    return image / np.nanmax(image)
+    img = img + np.abs(np.min(img))
+    return img / np.nanmax(img)
+
 
 def _save_one(img, path, name):
     img = Image.fromarray(img)
@@ -290,6 +331,7 @@ def _save_one(img, path, name):
         img.save(os.path.join(path, name))
     except Exception:
         raise FileNotFoundError('file {} is not found'.format(os.path.join(path, name))) from BaseException
+
 
 def save(imgs, path, names):
     '''
@@ -311,10 +353,12 @@ def save(imgs, path, names):
     else:
         _save_one(imgs, path, names) 
 
+
 def _add_suffixes(names, suffixes):
     for i in range(len(names)):
         name, ext = os.path.splitext(names[i])
         names[i] = name + str(suffixes[i]) + ext
+
 
 def apply(imgs, func, path=None, names=None, verbose=False): #TODO: add support of arg being path to folder
     '''
@@ -356,9 +400,10 @@ def apply(imgs, func, path=None, names=None, verbose=False): #TODO: add support 
         num += 1
     return results
 
+
 def percentile(array):
     '''
-    Gives list of percentiles of array.  
+    Gives a list of percentiles of array [0, 25 , 50, 75, 100].  
       
     Parameters:  
       
@@ -370,16 +415,22 @@ def percentile(array):
     '''
     return pd.DataFrame(np.percentile(array, [0, 25, 50, 75, 100]), index=['0', '25', '50', '75', '100']).T
 
+
 def _resize_batch(imgs, shape):
-    res_imgs = np.zeros((len(imgs), shape[0], shape[1]), imgs[0].dtype)
+    res_imgs = np.zeros((len(imgs), shape[0], shape[1], 3), imgs[0].dtype)
     for i in range(len(imgs)):
         res_imgs[i] = _resize_one(imgs[i], shape)
     return res_imgs
 
+
 def _resize_one(img, shape):
     if(shape == img.shape): #if image already has given shape
         return img
-    return cv2.resize(img, shape)
+    if(shape == img.T.shape): #if proposed shape is just a shape of transposed image
+        return img.T
+
+    return np.array(Image.fromarray(img).resize(shape[::-1]))
+
 
 def resize(imgs, shape):
     '''
