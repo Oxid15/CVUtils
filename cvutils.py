@@ -407,3 +407,48 @@ def resize(imgs, shape):
 #     plt.xlabel('epoch')
 #     plt.legend(['train', 'val'], loc = 'upper left')
 #     plt.show()
+
+
+def _mirror(img, mode):
+    if mode == 'h':
+        return np.array(ImageOps.flip(Image.fromarray(img)))
+    elif mode == 'v':
+        return np.array(ImageOps.mirror(Image.fromarray(img)))
+    elif mode == 'hv' or mode == 'vh':
+        vertical = ImageOps.mirror(Image.fromarray(img))
+        return np.array(ImageOps.flip(vertical))
+    else:
+        raise ValueError(f'mirror mode argument has only three possible values "h", "v" and "hv" or "vh" {mode} was given') 
+
+
+def _crop(img, crop, crop_pos):
+    if crop_pos is None or crop_pos == 'random':
+        x = random.randint(0, img.shape[1] - crop[0])
+        y = random.randint(0, img.shape[0] - crop[1])
+        crop_pos = (x, y)
+
+    coordinates = (crop_pos[0], crop_pos[1], img.shape[1] - crop[0] - crop_pos[0], img.shape[0] - crop[1] - crop_pos[1])
+    return np.array(ImageOps.crop(Image.fromarray(img), coordinates))
+
+
+def _augment_one(img, mirror, crop_size, crop_position, noise_mean, noise_sigma):
+    if mirror is not None:
+        img = _mirror(img, mirror)
+    if crop_size is not None:
+        img = _crop(img, crop_size, crop_position)
+    if noise_mean is not None and noise_sigma is not None:
+        if len(img.shape) == 2:
+            grayscale = True
+        else:
+            grayscale = False
+        img = add_noise_gaussian(img, grayscale, mean=noise_mean, std=noise_sigma)
+    return img
+
+def augment(imgs, mirror=None, crop_size=None, crop_position=None, noise_mean=None, noise_sigma=None):
+    result = []
+    if _is_multiple(imgs):
+        for i in range(len(imgs)):
+            result.append(_augment_one(imgs[i], mirror, crop_size, crop_position, noise_mean, noise_sigma))
+        return np.array(result)
+    else:
+        return _augment_one(imgs, mirror, crop_size, crop_position, noise_mean, noise_sigma)
