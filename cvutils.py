@@ -221,10 +221,11 @@ def add_noise_gaussian(img, grayscale, mean=0, std=1):
     return np.clip(noisy_img, 0, 255).astype(np.uint8)
 
 
-def _read_batch(path, max_img=None, shape=None):
+def _read_batch(path, max_img=None, shape=None, sort=False):
         images = []
         filenames = os.listdir(path)
-        filenames.sort()
+        if sort:
+            filenames.sort()
         if(max_img is None):
             max_img = len(filenames)
         for i in range(max_img):
@@ -248,7 +249,7 @@ def _read_one(path, shape):
         return _resize_one(np.array(Image.open(path)), shape)
 
 
-def imread(path, max_img=None, shape=None):
+def imread(path, max_img=None, shape=None, sort=False):
     '''
     Reads an image or a list of images. Uses PIL: Image.open()  
       
@@ -263,7 +264,7 @@ def imread(path, max_img=None, shape=None):
     Returns: (np.ndarray) image or list of images
     '''
     if(os.path.isdir(path)):
-        return _read_batch(path, max_img, shape)
+        return _read_batch(path, max_img, shape, sort)
     else:
         return _read_one(path, shape)
 
