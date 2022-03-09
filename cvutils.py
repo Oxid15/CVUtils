@@ -294,7 +294,13 @@ def normalize(img):
       
     Returns:  (np.ndarray) normalized image
     '''
-    return (img - np.mean(img)) / np.std(img)
+    m = np.mean(img)
+    std = np.std(img)
+    if std != 0:
+        img = (img - m) / std
+    else:
+        img = img - m
+    return img
 
 
 def to_255(img):
@@ -417,23 +423,33 @@ def percentile(array):
     return pd.DataFrame(np.percentile(array, [0, 25, 50, 75, 100]), index=['0', '25', '50', '75', '100']).T
 
 
-def _resize_batch(imgs, shape):
+def _resize_batch(imgs, shape, save_aspect, pad):
     res_imgs = np.zeros((len(imgs), shape[0], shape[1], 3), imgs[0].dtype)
     for i in range(len(imgs)):
-        res_imgs[i] = _resize_one(imgs[i], shape)
+        res_imgs[i] = _resize_one(imgs[i], shape, save_aspect, pad)
     return res_imgs
 
 
-def _resize_one(img, shape):
+def _resize_one(img, shape, save_aspect, pad):
     if(shape == img.shape): #if image already has given shape
         return img
-    if(shape == img.T.shape): #if proposed shape is just a shape of transposed image
-        return img.T
 
-    return np.array(Image.fromarray(img).resize(shape[::-1]))
+    if save_aspect:
+        img = Image.fromarray(img)
+        img.thumbnail(shape, Image.ANTIALIAS)
+    else:
+        img = Image.fromarray(img).resize(shape[::-1])
+    
+    if pad: 
+        crop = img.crop( (0, 0, shape[0], shape[1]) )
+        offset_x = max( (shape[0] - img.size[0]) // 2, 0 )
+        offset_y = max( (shape[1] - img.size[1]) // 2, 0 )
+
+        img = ImageChops.offset(crop, offset_x, offset_y)
+    return np.asarray(img)
 
 
-def resize(imgs, shape):
+def resize(imgs, shape, save_aspect=False, pad=None):
     '''
     Resizes image or a list of images.    
       
