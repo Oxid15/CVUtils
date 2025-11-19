@@ -1,0 +1,9 @@
+[project]
+name = "cvutils"
+version = "0.1.0"
+description = "CVUtils - a single file of computer vision helper fuctions"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
