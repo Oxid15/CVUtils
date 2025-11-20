@@ -1,6 +1,3 @@
-# import os
-# import time
-
 from typing import Any, Dict
 
 import numpy as np
@@ -11,27 +8,74 @@ import numpy as np
 __version__ = "0.1.0"
 
 
-def _is_multiple(img):
-    shape = img.shape
-    if len(shape) == 1:  # (n,) case, array with images of different shapes
-        if len(img[0].shape) > 1:  # if contains images and not scalars
-            return True
-        else:
-            raise ValueError(
-                f"Array of scalars was passed with shape={shape} instead of array of images"
-            )
-    else:
-        if len(shape) == 2:  # it is single-channel image (h, w)
-            return False
-        elif (
-            len(shape) == 3
-        ):  # it is 3-channel image (h, w, 3) or it is array of single-channel images (n, h, w)
-            if shape[-1] == 3:
-                return False
-            else:
-                return True
-        elif len(shape) == 4:  # it is an array of 3-channel images (n, h, w, 3)
-            return True
+def tonp(x):
+    return np.array(x)
+
+
+def to1(x: Any) -> Any:
+    """
+    Min max normalization for arrays (should work for everything with .min() and .max())
+
+    Parameters
+    ----------
+    x : Any
+        Array or tensor
+
+    Returns
+    -------
+    Any
+        Normalized array
+    """
+    min_val = x.min()
+    max_val = x.max()
+
+    return (x - min_val) / (max_val - min_val)
+
+
+def to255(x: Any) -> Any:
+    """
+    Does the same thing as to1() but also multiplies by 255
+
+    Parameters
+    ----------
+    x : Any
+        Array with any range
+
+    Returns
+    -------
+    Any
+        Array with range [0, 255]
+    """
+    return to1(x) * 255
+
+
+def mplot(x): ...
+
+
+def hist(x): ...
+
+
+# def _is_multiple(img):
+#     shape = img.shape
+#     if len(shape) == 1:  # (n,) case, array with images of different shapes
+#         if len(img[0].shape) > 1:  # if contains images and not scalars
+#             return True
+#         else:
+#             raise ValueError(
+#                 f"Array of scalars was passed with shape={shape} instead of array of images"
+#             )
+#     else:
+#         if len(shape) == 2:  # it is single-channel image (h, w)
+#             return False
+#         elif (
+#             len(shape) == 3
+#         ):  # it is 3-channel image (h, w, 3) or it is array of single-channel images (n, h, w)
+#             if shape[-1] == 3:
+#                 return False
+#             else:
+#                 return True
+#         elif len(shape) == 4:  # it is an array of 3-channel images (n, h, w, 3)
+#             return True
 
 
 # def _show_one(img, figsize, cmap_name, title, suptitle):
@@ -131,7 +175,7 @@ def _calculate_shape(imgs):
     height = imgs.shape[1]
     width = imgs.shape[2]
 
-    # euristic for three images to not show them as column
+    # heuristic for three images to not show them as column
     # when it isn't necessary
     if size == 3:
         if height > width:
@@ -283,45 +327,6 @@ def _calculate_figsize(imgs, shape, factor):
 #     return img
 
 
-def norm(img):
-    # m = np.mean(img)
-    # std = np.std(img)
-    # if std != 0:
-    #     img = (img - m) / std
-    # else:
-    #     img = img - m
-    return img
-
-
-def to255(img):
-    # """
-    # Normalizes image to [0, 255] by adding minimum and dividing by the maximum value and multiplying by 255. Ignores nans by np.nanmax(). Casts the dtype to uint8.
-
-    # Parameters:
-
-    # img - image to be normalized
-
-    # Returns:  (np.ndarray) normalized image of dtype uint8
-    # """
-    img = img + np.abs(np.min(img))
-    _max = np.nanmax(img)
-    return ((img / _max) * 255).astype(np.uint8)
-
-
-def to1(img):
-    # """
-    # Normalizes image to [0, 1] by dividing by the maximum value. Ignores nans by np.nanmax().
-
-    # Parameters:
-
-    # img - image to be normalized
-
-    # Returns:  (np.ndarray) normalized image
-    # """
-    img = img + np.abs(np.min(img))
-    return img / np.nanmax(img)
-
-
 # def percentile(array):
 #     """
 #     Gives a list of percentiles of array [0, 25 , 50, 75, 100].
@@ -420,3 +425,6 @@ def what(x: Any) -> Dict[str, Any]:
         d["len"] = len(x)
 
     return d
+
+
+def test(x) -> bool: ...
