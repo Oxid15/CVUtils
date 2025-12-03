@@ -1,14 +1,64 @@
 from typing import Any, Dict
 
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
 import numpy as np
 
-# from matplotlib import pyplot as plt
-# from PIL import Image, ImageChops
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    plt = None
 
 __version__ = "0.1.0"
 
+PHI = 1.618033988
+CHANNEL_OPTIONS = (1, 3)
+
+
+def what(x: Any) -> Dict[str, Any]:
+    """
+    Introspection tool designed for debugging in REPL mode or with prints
+
+    Parameters
+    ----------
+    x : Any
+        Best options are numpy.ndarray, torch.tensor, list, dict
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary with useful fields for debugging arrays
+    """
+    d = {"type": type(x)}
+
+    for method in ["min", "mean", "max"]:
+        if hasattr(x, method):
+            d[method] = getattr(x, method)()
+
+    if hasattr(x, "shape"):
+        d["shape"] = x.shape
+
+    if hasattr(x, "dtype"):
+        d["dtype"] = x.dtype
+
+    if isinstance(x, dict):
+        d["keys"] = list(x.keys())
+
+    if isinstance(x, list):
+        d["len"] = len(x)
+
+    return d
+
 
 def tonp(x):
+    """
+    Converts input to numpy array, works best with torch.Tensor
+    """
+    if hasattr(x, "detach") and hasattr(x, "cpu"):
+        x = x.detach().cpu()
     return np.array(x)
 
 
@@ -52,114 +102,7 @@ def to255(x: Any) -> Any:
 def mplot(x): ...
 
 
-def hist(x): ...
-
-
-# def _is_multiple(img):
-#     shape = img.shape
-#     if len(shape) == 1:  # (n,) case, array with images of different shapes
-#         if len(img[0].shape) > 1:  # if contains images and not scalars
-#             return True
-#         else:
-#             raise ValueError(
-#                 f"Array of scalars was passed with shape={shape} instead of array of images"
-#             )
-#     else:
-#         if len(shape) == 2:  # it is single-channel image (h, w)
-#             return False
-#         elif (
-#             len(shape) == 3
-#         ):  # it is 3-channel image (h, w, 3) or it is array of single-channel images (n, h, w)
-#             if shape[-1] == 3:
-#                 return False
-#             else:
-#                 return True
-#         elif len(shape) == 4:  # it is an array of 3-channel images (n, h, w, 3)
-#             return True
-
-
-# def _show_one(img, figsize, cmap_name, title, suptitle):
-#     if figsize == "auto":
-#         figsize = None
-#     _, ax = plt.subplots(figsize=figsize)
-#     if title is not None:
-#         ax.set_title(title)
-#     plt.suptitle(suptitle)
-#     ax.set_title(title)
-#     ax.imshow(img, cmap=plt.cm.get_cmap(cmap_name))
-#     plt.show()
-
-
-# def _show_consequent(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
-#     k = 0
-#     if shape is None:
-#         for img in imgs:
-#             if k < max_img:
-#                 _, ax = plt.subplots(figsize=figsize)
-#                 plt.suptitle(suptitle)
-#                 ax.imshow(img, cmap=plt.cm.get_cmap(cmap_name))
-#                 if titles is not None:
-#                     ax.set_title(titles[k])
-#                 plt.show()
-#                 k += 1
-
-
-# def _show_on_one_plot(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
-#     k = 0
-#     _, ax = plt.subplots(shape[0], shape[1], figsize=figsize)
-#     plt.suptitle(suptitle)
-#     if shape[0] != 1 and shape[1] != 1:
-#         for i in range(shape[0]):
-#             for j in range(shape[1]):
-#                 if k < max_img:
-#                     ax[i][j].imshow(imgs[k], cmap=plt.cm.get_cmap(cmap_name))
-#                     if titles is not None:
-#                         ax[i][j].set_title(titles[k])
-#                     k += 1
-#     else:
-#         if shape[0] == 1:
-#             opposite_shape = 1
-#         elif shape[1] == 1:
-#             opposite_shape = 0
-#         for i in range(shape[opposite_shape]):
-#             if k < max_img:
-#                 ax[i].imshow(imgs[k], cmap=plt.cm.get_cmap(cmap_name))
-#                 if titles is not None:
-#                     ax[i].set_title(titles[k])
-#                 k += 1
-
-
-# def _show_multiple(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
-#     if max_img is None:
-#         max_img = len(imgs)
-#     if shape == "auto":
-#         shape = _calculate_shape(imgs)
-#     if figsize == "auto":
-#         figsize = _calculate_figsize(imgs, shape, figsize_factor)
-#     if shape is None:
-#         _show_consequent(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
-#     else:
-#         _show_on_one_plot(
-#             imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle
-#         )
-#     plt.show()
-
-
-# def _show_from(path, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle):
-#     if os.path.isdir(path):
-#         imgs = imread(path, max_img=max_img)
-#         _show_multiple(imgs, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
-#     else:
-#         img = np.array(Image.open(path))
-#         imshow(
-#             img,
-#             figsize=figsize,
-#             max_img=max_img,
-#             cmap_name=cmap_name,
-#             titles=titles,
-#             figsize_factor=figsize_factor,
-#             suptitle=suptitle,
-#         )
+def mhist(x): ...
 
 
 def _factorize(num):
@@ -188,7 +131,7 @@ def _calculate_shape(imgs):
         factors = _factorize(size + 1)
     factors_r = factors[::-1]
     ratios = factors / factors_r
-    ratios = ratios - 1.618033988
+    ratios = ratios - PHI
     arg = np.argmin(np.abs(ratios))
     if height > width:
         return (factors[arg], factors_r[arg])
@@ -196,235 +139,142 @@ def _calculate_shape(imgs):
         return (factors_r[arg], factors[arg])
 
 
-def _calculate_figsize(imgs, shape, factor):
-    sum_height = shape[0] * imgs.shape[1]
-    sum_width = shape[1] * imgs.shape[2]
-    if factor is None:
-        factor = 20
-    ratio = sum_height / sum_width
-    return (factor, factor * ratio)
+def imgrid(x):
+    _, c, h, w = x.shape
+    h_count, w_count = _calculate_shape(x)
+
+    k = 0
+    text_h_px = 10 if cv2 is not None else 0
+    grid = np.zeros((c, h * h_count + h_count * text_h_px, w * w_count))
+    for i in range(h_count):
+        for j in range(w_count):
+            grid[
+                :,
+                i * h + (i + 1) * text_h_px : (i + 1) * h + (i + 1) * text_h_px,
+                j * w : (j + 1) * w,
+            ] = x[k]
+            k += 1
+
+    # if cv2 is not None:
+    #     k = 0
+    #     color = (255, 255, 255)
+    #     for i in range(h_count):
+    #         for j in range(w_count):
+    #             cv2.putText(
+    #                 grid,
+    #                 f"{k:0>5d}",
+    #                 (i * h, j * w),
+    #                 cv2.FONT_HERSHEY_SIMPLEX,
+    #                 10,
+    #                 color,
+    #                 1,
+    #             )
+    #             k += 1
+
+    return grid
 
 
-# def imshow(
-#     arg,
-#     shape="auto",
-#     figsize="auto",
-#     figsize_factor=None,
-#     max_img=None,
-#     cmap_name=None,
-#     titles=None,
-#     suptitle=None,
-#     norm=True,
-# ):
-#     """
-#     Displays an image or a sequence of images.
-
-#     Parameters:
-#     arg: (string, np.ndarray, list, tuple) can be a path to a folder or a file or np.array containing image or sequence of images; if it is a folder path, reads
-#     all images from folder, or a certain amount that is set by max_img argument
-
-#     shape: default is 'auto', (tuple) if multiple images are passed, determines a shape with which they will be shown in form (rows, columns);
-#     if set to 'auto' calculates the optimal shape in which images should be shown considering their quantity and aspect ratio; pass
-#     tuple to set custom shape; if shape is set for the more images that were passed i.e. (3, 2) for 5 images, it would left the one subplot blank;
-#     would let one to be blank automatically in 'auto' setting if the number of images passed is prime
-
-#     figsize: default is 'auto'; (tuple) figsize argument from matplotlib to set the size of the plot; if set to 'auto' calculates the figsize that would
-#     be optimal considering shape and image aspect ratios
-
-#     figsize_factor: (int) set this if figsize is set to 'auto'; represents the width of the figure that is passsed to matplotlib; the height is computed by multiplying this value by aspect ratio calculated from shape
-
-#     max_img: (int) sets the maximum number of images to read if arg is the path to folder
-
-#     cmap_name: (str) the name of colormap from matplotlib
-
-#     titles: (list of str) a list of titles for the subplots to the set_title
-
-#     suptitle: (str) the title for the whole plot
-
-#     norm: (bool) whether to normalize the images by dividing by their np.max
-
-#     Returns: None
-#     """
-#     if arg is None:
-#         raise ValueError("The argument was None!")
-#     if type(arg) == str:
-#         _show_from(arg, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle)
-#     else:
-#         if type(arg) == list:
-#             arg = np.array(arg)
-#         if _is_multiple(arg):
-#             if norm:
-#                 for i in range(len(arg)):
-#                     arg[i] = to_255(arg[i])
-#             _show_multiple(
-#                 arg, shape, figsize, max_img, cmap_name, titles, figsize_factor, suptitle
-#             )
-#         else:
-#             arg = to_255(arg)
-#             _show_one(arg, figsize, cmap_name, titles, suptitle)
+def _find_channels(x):
+    for i, dim in enumerate(x.shape[::-1]):
+        if dim in CHANNEL_OPTIONS:
+            return len(x.shape) - 1 - i
+    return None
 
 
-# def _read_batch(path, max_img=None, shape=None, sort=False):
-#     images = []
-#     filenames = os.listdir(path)
-#     if sort:
-#         filenames.sort()
-#     if max_img is None:
-#         max_img = len(filenames)
-#     for i in range(max_img):
-#         try:
-#             image = Image.open(os.path.join(path, filenames[i]))
-#         except:
-#             pass
-#         else:
-#             images.append(np.array(image))
+def atest(x, post=None):
+    x = tonp(x)
 
-#     if shape is None:
-#         return np.array(images)
-#     else:
-#         return _resize_batch(np.array(images), shape)
+    shape = x.shape
+    assert len(shape) in (3, 4)
+    channels_idx = _find_channels(x)
 
+    if channels_idx is None:
+        raise ValueError(f"Cannot find channels dim in {shape}, should be in {CHANNEL_OPTIONS}")
 
-# def _read_one(path, shape):
-#     if shape is None:
-#         return np.array(Image.open(path))
-#     else:
-#         return _resize_one(np.array(Image.open(path)), shape)
-
-
-# def imread(path, max_img=None, shape=None, sort=False):
-#     """
-#     Reads an image or a list of images. Uses PIL: Image.open()
-
-#     Parameters:
-
-#     path: (str) path to the file or folder
-
-#     max_img: (int) maximum number of images
-
-#     shape: (tuple) the desired shape for images to be resized; does not resize anything by default, when is set calls PIL.Image.resize() with shape
-
-#     Returns: (np.ndarray) image or list of images
-#     """
-#     if os.path.isdir(path):
-#         return _read_batch(path, max_img, shape, sort)
-#     else:
-#         return _read_one(path, shape)
-
-
-# def open_and_show(path):
-#     """
-#     Reads singular image and shows it by matplotlib.
-
-#     Parameters:
-
-#     path (str): path to the image file
-
-#     Returns: (np.ndarray) image
-#     """
-#     img = imread(path)
-#     _show_one(img, (10, 10), "viridis", None, "input")
-#     return img
-
-
-# def percentile(array):
-#     """
-#     Gives a list of percentiles of array [0, 25 , 50, 75, 100].
-
-#     Parameters:
-
-#     array: (np.ndarray) array to get percentiles from
-
-#     Returns: (pandas.DataFrame) DataFrame with the following percentiles of input array: [0, 25 , 50, 75, 100].
-#     Useful function to call in Jupyter notebooks to fast check the distribution of the particular array.
-#     Pandas DataFrame isn't necessary, but it gives nice output in the form of table.
-#     """
-#     return pd.DataFrame(
-#         np.percentile(array, [0, 25, 50, 75, 100]), index=["0", "25", "50", "75", "100"]
-#     ).T
-
-
-def _resize_batch(imgs, shape, save_aspect, pad):
-    res_imgs = np.zeros((len(imgs), shape[0], shape[1], 3), imgs[0].dtype)
-    for i in range(len(imgs)):
-        res_imgs[i] = _resize_one(imgs[i], shape, save_aspect, pad)
-    return res_imgs
-
-
-def _resize_one(img, shape, save_aspect, pad):
-    if shape == img.shape:  # if image already has given shape
-        return img
-
-    if save_aspect:
-        img = Image.fromarray(img)
-        img.thumbnail(shape, Image.ANTIALIAS)
+    dim_order = [i for i in range(len(shape))]
+    if len(shape) == 4:
+        dim_order = [dim_order[0], channels_idx, *[i for i in dim_order[1:] if i != channels_idx]]
     else:
-        img = Image.fromarray(img).resize(shape[::-1])
+        dim_order = [channels_idx, *[i for i in dim_order if i != channels_idx]]
+    x = x.transpose(*dim_order)
 
-    if pad:
-        crop = img.crop((0, 0, shape[0], shape[1]))
-        offset_x = max((shape[0] - img.size[0]) // 2, 0)
-        offset_y = max((shape[1] - img.size[1]) // 2, 0)
+    if len(shape) == 4:
+        x = imgrid(x)
 
-        img = ImageChops.offset(crop, offset_x, offset_y)
-    return np.asarray(img)
+    assert shape[channels_idx] in CHANNEL_OPTIONS
 
+    x = x.transpose(1, 2, 0)
 
-def resize(imgs, shape, save_aspect=False, pad=None):
-    # """
-    # Resizes image or a list of images.
+    if (x > 1).any():
+        x = to1(x)
 
-    # Parameters:
+    name = "test"
+    if post:
+        name = f"{name}_{post}"
 
-    # imgs: (np.ndarray, list) image or a list of images
-
-    # shape: desired shape
-
-    # save_aspect: if True resizes by the longest side
-
-    # pad: if color tuple is given in combination with save_aspect pads the borders
-
-    # Returns: (np.ndarray) resized images
-    # """
-    if _is_multiple(imgs):
-        return _resize_batch(imgs, shape, save_aspect, pad)
-    else:
-        return _resize_one(imgs, shape, save_aspect, pad)
+    return cv2.imwrite(f"{name}.png", x * 255)
 
 
-def what(x: Any) -> Dict[str, Any]:
-    """
-    Introspection tool designed for debugging in REPL mode or with prints
+# def _resize_batch(imgs, shape, save_aspect, pad):
+#     res_imgs = np.zeros((len(imgs), shape[0], shape[1], 3), imgs[0].dtype)
+#     for i in range(len(imgs)):
+#         res_imgs[i] = _resize_one(imgs[i], shape, save_aspect, pad)
+#     return res_imgs
 
-    Parameters
-    ----------
-    x : Any
-        Best options are numpy.ndarray, torch.tensor, list, dict
 
-    Returns
-    -------
-    Dict[str, Any]
-        Dictionary with useful fields for debugging arrays
-    """
-    d = {"type": type(x)}
+# def _resize_one(img, shape, save_aspect, pad):
+#     if shape == img.shape:  # if image already has given shape
+#         return img
 
-    for method in ["min", "mean", "max"]:
-        if hasattr(x, method):
-            d[method] = getattr(x, method)()
+#     if save_aspect:
+#         img = Image.fromarray(img)
+#         img.thumbnail(shape, Image.ANTIALIAS)
+#     else:
+#         img = Image.fromarray(img).resize(shape[::-1])
 
-    if hasattr(x, "shape"):
-        d["shape"] = x.shape
+#     if pad:
+#         crop = img.crop((0, 0, shape[0], shape[1]))
+#         offset_x = max((shape[0] - img.size[0]) // 2, 0)
+#         offset_y = max((shape[1] - img.size[1]) // 2, 0)
 
-    if hasattr(x, "dtype"):
-        d["dtype"] = x.dtype
+#         img = ImageChops.offset(crop, offset_x, offset_y)
+#     return np.asarray(img)
 
-    if isinstance(x, dict):
-        d["keys"] = list(x.keys())
 
-    if isinstance(x, list):
-        d["len"] = len(x)
+# def resize(imgs, shape, save_aspect=False, pad=None):
+#     # """
+#     # Resizes image or a list of images.
 
-    return d
+#     # Parameters:
+
+#     # imgs: (np.ndarray, list) image or a list of images
+
+#     # shape: desired shape
+
+#     # save_aspect: if True resizes by the longest side
+
+#     # pad: if color tuple is given in combination with save_aspect pads the borders
+
+#     # Returns: (np.ndarray) resized images
+#     # """
+#     if _is_multiple(imgs):
+#         return _resize_batch(imgs, shape, save_aspect, pad)
+#     else:
+#         return _resize_one(imgs, shape, save_aspect, pad)
 
 
 def test(x) -> bool: ...
+
+
+def lm(x, *f):
+    """
+    Sometimes it is an easier way to
+    chain functions in debug console
+    """
+    if isinstance(x, list):
+        for func in f:
+            x = list(map(func, x))
+    else:
+        for func in f:
+            x = func(x)
+    return x

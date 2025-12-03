@@ -7,3 +7,8 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy",
 ]
+
+[project.optional-dependencies]
+opencv = [
+    "opencv-python",
+]
