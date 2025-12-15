@@ -134,9 +134,9 @@ def _calculate_shape(imgs):
     ratios = ratios - PHI
     arg = np.argmin(np.abs(ratios))
     if height > width:
-        return (factors[arg], factors_r[arg])
-    else:
         return (factors_r[arg], factors[arg])
+    else:
+        return (factors[arg], factors_r[arg])
 
 
 def imgrid(x):
@@ -144,34 +144,41 @@ def imgrid(x):
     h_count, w_count = _calculate_shape(x)
 
     k = 0
-    text_h_px = 10 if cv2 is not None else 0
-    grid = np.zeros((c, h * h_count + h_count * text_h_px, w * w_count))
+    text_h_px = 16 if cv2 is not None else 0
+    grid = np.zeros(
+        (h * h_count + h_count * text_h_px, w * w_count, c)
+    )  # different dim order - (h, w, c) for opencv
     for i in range(h_count):
         for j in range(w_count):
+            if k >= len(x):
+                break
+
             grid[
-                :,
                 i * h + (i + 1) * text_h_px : (i + 1) * h + (i + 1) * text_h_px,
                 j * w : (j + 1) * w,
-            ] = x[k]
+                :,
+            ] = x[k].transpose(1, 2, 0)
             k += 1
 
-    # if cv2 is not None:
-    #     k = 0
-    #     color = (255, 255, 255)
-    #     for i in range(h_count):
-    #         for j in range(w_count):
-    #             cv2.putText(
-    #                 grid,
-    #                 f"{k:0>5d}",
-    #                 (i * h, j * w),
-    #                 cv2.FONT_HERSHEY_SIMPLEX,
-    #                 10,
-    #                 color,
-    #                 1,
-    #             )
-    #             k += 1
+    k = 0
+    color = (1, 1, 1)
+    for i in range(h_count):
+        for j in range(w_count):
+            if k >= len(x):
+                break
 
-    return grid
+            cv2.putText(
+                grid,
+                f"{k:0>4d}",
+                (j * w, i * (h + text_h_px) + text_h_px - 1),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.30,
+                color,
+                1,
+            )
+            k += 1
+
+    return grid.transpose(2, 0, 1)
 
 
 def _find_channels(x):
