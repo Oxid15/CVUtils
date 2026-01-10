@@ -124,3 +124,9 @@ dmypy.json
 .pyre/
 
 .idea/
+
+# VSCode files
+.vscode
+
+# Custom
+test.py
