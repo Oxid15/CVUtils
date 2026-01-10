@@ -1,38 +1,38 @@
-# CVUtils
+# Pxalyze
 
-CVUtils - a single file for your computer vision debugging
+pxalyze - a single file for your computer vision debugging
 
 ## Installation
 
-`cvutils` tries to be very universal so it should work with Python since 3.7 (the lowest tested version)
+`pxalyze` tries to be very universal so it should work with Python since 3.7 (the lowest tested version)
 
 ```bash
-pip install cvutils
+pip install pxalyze
 ```
 
 It requires `numpy` and optionally `opencv` for visualizations
 you can install full version with
 
 ```bash
-pip install cvutils[opencv]
+pip install pxalyze[opencv]
 ```
 
 ## Usage
 
-`cvutils` is a single file library for debugging images as arrays or tensors
+`pxalyze` is a single file library for debugging images as arrays or tensors
 it is perfect for interactive debugging in REPL environments such as debug consoles
 or just interactive python shells
 
 The intended usage is the following, but depending on your setup you may choose to import it differently
 
 ```python
-from cvutils import *
+from pxalyze import *
 ```
 
 Alternatively to isolate the namespaces you can also use
 
 ```python
-import cvutils as cvu
+import pxalyze as cvu
 ```
 
 ### Introspection
@@ -40,7 +40,7 @@ import cvutils as cvu
 `what` is the method for introspection that helps to quickly analyze arrays or tensors, it returns dict
 
 ```python
->>> from cvutils import *
+>>> from pxalyze import *
 >>> x = np.random.random((1, 3, 256, 256))
 >>> what(x)
 {'type': <class 'numpy.ndarray'>, 'min': 1.072805627044815e-05, 'mean': 0.5001992238233383, 'max': 0.9999899398862, 'shape': (1, 3, 256, 256), 'dtype': dtype('float64')}
@@ -63,10 +63,10 @@ You can also use `rwhat` to recursively introspect lists or dicts of arrays
 [{'type': <class 'numpy.ndarray'>, 'min': 1, 'mean': 1.0, 'max': 1, 'shape': (), 'dtype': dtype('int64')}, {'type': <class 'numpy.ndarray'>, 'min': 2, 'mean': 2.0, 'max': 2, 'shape': (), 'dtype': dtype('int64')}]
 ```
 
-When you `import *` from `cvutils` you also get `pprint` imported as `pp` so you can use
+When you `import *` from `pxalyze` you also get `pprint` imported as `pp` so you can use
 
 ```python
->>> from cvutils import *
+>>> from pxalyze import *
 >>> pp(rwhat([np.array(1), np.array(2)]))
 [{'dtype': dtype('int64'),
   'max': 1,
@@ -185,7 +185,7 @@ but much less brackets!
 You can use `tonp` to conventiently convert torch.Tensors to numpy and not type `.detach().cpu().numpy()` ever again.
 
 ```python
->>> from cvutils import *
+>>> from pxalyze import *
 >>> a = torch.randn((4, 3, 16, 16)).to("cuda:0")
 >>> what(tonp(a))
 {'type': <class 'numpy.ndarray'>, 'min': -3.2309637, 'mean': -0.010580406, 'max': 3.5923967, 'shape': (4, 3, 16, 16), 'dtype': dtype('float32')}

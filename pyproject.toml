@@ -1,9 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "cvutils"
+name = "pxalyze"
 version = "0.1.0"
-description = "CVUtils - a single file of computer vision helper fuctions"
+authors = [{name = "Ilia Moiseev", email = "ilia.moiseev.5@yandex.ru"}]
+license = {text = "Apache License, Version 2.0"}
+description = "Pxalyze - a single file for debugging your images"
 readme = "README.md"
 requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
 ]
@@ -12,3 +22,7 @@ dependencies = [
 opencv = [
     "opencv-python",
 ]
+
+[tool.setuptools]
+packages = ["pxalyze"]
+package-dir = {"" = "."}
