@@ -32,7 +32,7 @@ from pxalyze import *
 Alternatively to isolate the namespaces you can also use
 
 ```python
-import pxalyze as cvu
+import pxalyze as xa
 ```
 
 ### Introspection
