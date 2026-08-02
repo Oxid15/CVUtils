@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Ilia Moiseev"
 __author_email__ = "ilia.moiseev.5@yandex.ru"
 
+# This is re-exported import for convenience of debug
 from pprint import pprint as pp
 
 try:
@@ -32,7 +33,6 @@ try:
 except ImportError:
     plt = None
 
-__version__ = "0.1.0"
 
 PHI = 1.618033988
 CHANNEL_OPTIONS = (1, 3)
@@ -161,14 +161,14 @@ def _calculate_shape(imgs):
     ratios = factors / factors_r
     ratios = ratios - PHI
     arg = np.argmin(np.abs(ratios))
-    
+
     y = factors[arg]
     x = factors_r[arg]
-    
+
     # swap sides if the image is vertical
     if height * y > width * x:
         x, y = y, x
-    
+
     return y, x
 
 
@@ -293,13 +293,23 @@ def atest(x, post=None):
 
     x = tonp(x)
 
+    if (x > 1).any():
+        x = to1(x)
+
+    x = x * 255  # for opencv vizualization
+
     shape = x.shape
-    assert len(shape) in (3, 4)
+
+    if len(shape) == 2:
+        return test(x, post=post)
+
+    assert len(shape) in (3, 4), "Available shape formats are: HW, HWC, CHW, BCHW, BHWC"
+
     channels_idx = _find_channels(x)
 
     if channels_idx is None:
         raise ValueError(
-            f"Cannot find channels dim in {shape}, should be in {CHANNEL_OPTIONS}"
+            f"Cannot find channels dim in {shape}, should be one of {CHANNEL_OPTIONS}"
         )
 
     dim_order = [i for i in range(len(shape))]
@@ -318,12 +328,12 @@ def atest(x, post=None):
 
     # TODO: imgrid result can be huge - need to add max_size
 
-    assert shape[channels_idx] in CHANNEL_OPTIONS
+    assert shape[channels_idx] in CHANNEL_OPTIONS, f"Only {CHANNEL_OPTIONS}"
+    " are supported channels for atest. If you want to visualize feature maps, consider using featest()"
 
     x = x.transpose(1, 2, 0)
 
-    if (x > 1).any():
-        x = to1(x)
+    return test(x, post=post)
 
     name = "test"
     if post:

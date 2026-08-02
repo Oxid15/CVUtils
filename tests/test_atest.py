@@ -24,6 +24,7 @@ def _read_written_image(post=None):
 @pytest.mark.parametrize(
     "shape",
     [
+        (256, 256),  # HW, single image
         (256, 256, 3),  # HWC, single image
         (3, 256, 256),  # CHW, single image
         (256, 256, 1),  # HWC, single channel
@@ -101,7 +102,7 @@ def test_atest_raises_when_channels_dim_is_ambiguous():
         xa.atest(x)
 
 
-@pytest.mark.parametrize("shape", [(256, 256), (2, 3, 256, 256, 3)])
+@pytest.mark.parametrize("shape", [(256,), (2, 3, 256, 256, 3)])
 def test_atest_rejects_wrong_number_of_dims(shape):
     x = np.random.random(shape)
 
