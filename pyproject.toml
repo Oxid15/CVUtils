@@ -14,15 +14,20 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "numpy",
-]
+dependencies = ["numpy"]
 
 [project.optional-dependencies]
-opencv = [
-    "opencv-python",
-]
+opencv = ["opencv-python"]
 
 [tool.setuptools]
 packages = ["pxalyze"]
-package-dir = {"" = "."}
+package-dir = { "" = "." }
+
+[dependency-groups]
+dev = [
+    "opencv-python>=4.11.0.86",
+    "pytest>=7.4.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
