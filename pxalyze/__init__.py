@@ -233,10 +233,10 @@ def imgrid(x, head=False):
 
                 cv2.putText(
                     grid,
-                    f"{k:0>4d}",
+                    f"{k:0>3d}",
                     (j * w, i * (h + text_h_px) + text_h_px - 1),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    0.50,
+                    0.4,
                     color,
                     1,
                 )

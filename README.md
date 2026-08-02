@@ -142,6 +142,18 @@ will produce the following image
 
 ![atest](images/atest.png)
 
+`featest` is the more specialized version of `atest` that can be used to visualize feature maps.
+Each channel will be put in its own tile and visualized in grayscale, whole image will always be normalized to [0, 1].
+
+![atest](images/featest.png)
+
+```python
+>>> featest(np.random.random(43, 3, 32, 32))
+True
+```
+
+will produce the image with 
+
 ### Utilities
 
 Use `to1` and `to255` to minmax normalize arrays
