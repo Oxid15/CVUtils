@@ -150,6 +150,17 @@ def _factorize(num):
 
 
 def _calculate_shape(imgs):
+    """
+    Parameters
+    ----------
+    imgs : Any
+        Images of shape (B, C, H, W)
+
+    Returns
+    -------
+    tuple
+        Gives (H, W) dims
+    """
     size = imgs.shape[0]
     height = imgs.shape[2]
     width = imgs.shape[3]
@@ -181,14 +192,18 @@ def imgrid(x, head=False):
     Parameters
     ----------
     x : Any
-        Images of shape (B, C, H, W)
+        Images of shape (B, C, H, W), where C in (3, 1)
 
     Returns
     -------
     Any
-        Tiled images of shape (C, nH, nW)
+        Tiled images of shape (nH, nW, C)
     """
     _, c, h, w = x.shape
+    assert c in (3, 1)
+
+    max_val = x.max()
+
     h_count, w_count = _calculate_shape(x)
 
     k = 0
@@ -210,7 +225,7 @@ def imgrid(x, head=False):
 
     if cv2 is not None and head:
         k = 0
-        color = (1, 1, 1)
+        color = (max_val / 2, max_val / 2, max_val) if c == 3 else max_val
         for i in range(h_count):
             for j in range(w_count):
                 if k >= len(x):
@@ -220,14 +235,14 @@ def imgrid(x, head=False):
                     grid,
                     f"{k:0>4d}",
                     (j * w, i * (h + text_h_px) + text_h_px - 1),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.30,
+                    cv2.FONT_HERSHEY_DUPLEX,
+                    0.50,
                     color,
                     1,
                 )
                 k += 1
 
-    return grid.transpose(2, 0, 1)
+    return grid
 
 
 def _find_channels(x):
@@ -319,27 +334,38 @@ def atest(x, post=None):
             channels_idx,
             *[i for i in dim_order[1:] if i != channels_idx],
         ]
+        x = x.transpose(*dim_order)
+        x = imgrid(x, head=True)  # HWC
     else:
-        dim_order = [channels_idx, *[i for i in dim_order if i != channels_idx]]
-    x = x.transpose(*dim_order)
-
-    if len(shape) == 4:
-        x = imgrid(x, head=True)
+        dim_order = [*[i for i in dim_order if i != channels_idx], channels_idx]
+        x = x.transpose(dim_order)  # HWC
 
     # TODO: imgrid result can be huge - need to add max_size
 
     assert shape[channels_idx] in CHANNEL_OPTIONS, f"Only {CHANNEL_OPTIONS}"
     " are supported channels for atest. If you want to visualize feature maps, consider using featest()"
 
-    x = x.transpose(1, 2, 0)
-
     return test(x, post=post)
 
-    name = "test"
-    if post:
-        name = f"{name}_{post}"
 
-    return cv2.imwrite(f"{name}.png", x * 255)
+def featest(x, post=None):
+    """
+    Feature map visualizer - always does normalization, always assumes HW, CHW, BCHW
+    """
+    shape = x.shape
+    assert len(shape) in (2, 3, 4), "Available shape options are HW, CHW, BCHW"
+
+    if len(shape) == 2:
+        x = x.reshape(1, 1, *x.shape)  # Make 11HW from HW
+    elif len(shape) == 3:
+        x = x.reshape(x.shape[0], 1, *x.shape[1:])  # Make B1HW from CWH
+    else:
+        x = x.reshape(x.shape[0] * x.shape[1], 1, *x.shape[2:])  # Make B*C1HW from BCHW
+
+    x = to255(x)
+    x = imgrid(x, head=True)
+
+    return test(x, post=post)
 
 
 def lm(x, *f):

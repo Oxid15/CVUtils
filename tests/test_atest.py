@@ -5,20 +5,14 @@ import pytest
 
 import pxalyze as xa
 
+from tests.conftest import read_written_image
+
 cv2 = pytest.importorskip("cv2")
 
 
 @pytest.fixture(autouse=True)
 def _isolated_cwd(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-
-
-def _read_written_image(post=None):
-    name = "test.png" if not post else f"test_{post}.png"
-    assert os.path.exists(name)
-    img = cv2.imread(name)
-    assert img is not None
-    return img
 
 
 @pytest.mark.parametrize(
@@ -39,7 +33,7 @@ def test_atest_handles_a_variety_of_shapes(shape):
 
     assert xa.atest(x, post="shape") is True
 
-    img = _read_written_image("shape")
+    img = read_written_image("shape")
     assert img.ndim == 3
     assert img.shape[2] == 3  # cv2 always reads BGR
 
@@ -49,7 +43,7 @@ def test_atest_normalizes_out_of_range_values():
 
     assert xa.atest(x, post="big") is True
 
-    img = _read_written_image("big")
+    img = read_written_image("big")
     assert img.min() >= 0
     assert img.max() <= 255
     # a wide-range input should use a meaningful chunk of the output range
@@ -62,7 +56,7 @@ def test_atest_unit_range_no_norm():
 
     assert xa.atest(x, post="unit") is True
 
-    img = _read_written_image("unit")
+    img = read_written_image("unit")
     assert img.max() == 255
     assert img.min() == 0
 
@@ -72,7 +66,7 @@ def test_atest_batch_tiles_and_labels_each_tile():
 
     assert xa.atest(x, post="batch") is True
 
-    img = _read_written_image("batch")
+    img = read_written_image("batch")
     h_count, w_count = xa._calculate_shape(x)
 
     # labeled rows add 16px of header per tile row on top of the raw tile height
@@ -85,7 +79,7 @@ def test_atest_arbitrary_batch_sizes(batch):
     x = np.random.random((batch, 3, 16, 16))
 
     assert xa.atest(x, post=f"n{batch}") is True
-    _read_written_image(f"n{batch}")
+    read_written_image(f"n{batch}")
 
 
 def test_atest_no_post():
@@ -127,4 +121,4 @@ def test_tensor():
     x = FakeTensor(np.random.random((4, 3, 8, 8)))
 
     assert xa.atest(x, post="fake_tensor") is True
-    _read_written_image("fake_tensor")
+    read_written_image("fake_tensor")

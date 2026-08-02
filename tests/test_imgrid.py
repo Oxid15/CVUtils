@@ -68,12 +68,12 @@ def test_imgrid_places_each_image_in_its_own_tile(batch):
     h_count, w_count = xa._calculate_shape(x)
     grid = xa.imgrid(x, head=False)
 
-    assert grid.shape == (c, h * h_count, w * w_count)
+    assert grid.shape == (h * h_count, w * w_count, c)
 
     k = 0
     for row in range(h_count):
         for col in range(w_count):
-            tile = grid[:, row * h : (row + 1) * h, col * w : (col + 1) * w]
+            tile = grid[row * h : (row + 1) * h, col * w : (col + 1) * w, :]
             if k < batch:
                 np.testing.assert_array_equal(tile, k + 1)
             else:
@@ -87,7 +87,7 @@ def test_imgrid_without_head_has_no_extra_rows():
     grid = xa.imgrid(x, head=False)
 
     h_count, w_count = xa._calculate_shape(x)
-    assert grid.shape == (3, 8 * h_count, 8 * w_count)
+    assert grid.shape == (8 * h_count, 8 * w_count, 3)
 
 
 def test_imgrid_with_head_reserves_space_for_labels():
@@ -97,7 +97,7 @@ def test_imgrid_with_head_reserves_space_for_labels():
     grid = xa.imgrid(x, head=True)
 
     h_count, w_count = xa._calculate_shape(x)
-    assert grid.shape == (3, 8 * h_count + h_count * 16, 8 * w_count)
+    assert grid.shape == (8 * h_count + h_count * 16, 8 * w_count, 3)
 
 
 def test_imgrid_single_image_batch():
@@ -105,5 +105,5 @@ def test_imgrid_single_image_batch():
 
     grid = xa.imgrid(x, head=False)
 
-    assert grid.shape == (3, 5, 5)
-    np.testing.assert_array_equal(grid, x[0])
+    assert grid.shape == (5, 5, 3)
+    np.testing.assert_array_equal(grid, x[0].transpose(1, 2, 0))
